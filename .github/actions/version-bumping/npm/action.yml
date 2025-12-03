@@ -1,0 +1,74 @@
+name: Automated NPM Project Version Bump
+description: Automated NPM Project Version Bump, only recommend to run in PRs.
+
+inputs:
+  package-json-file:
+    description: "Where to find the package.json file, only relevant for buildType npm"
+    default: "package.json"
+    required: false
+  bump-command:
+    description: "Command to update the version"
+    default: "npm version @NEW_VERSION@ --no-git-tag-version --allow-same-version"
+    required: false
+  commit-message:
+    description: "Custom commit message for version bump commit"
+    default: "version bump to"
+    required: false
+  git-username:
+    description: "Git username for the commit"
+    default: "github-actions[bot]"
+    required: false
+  git-useremail:
+    description: "Git user email for the commit"
+    default: "github-actions[bot]@users.noreply.github.com"
+    required: false
+  post-command:
+    description: "shell command to run after version bump"
+    default: ""
+    required: false
+  token:
+    description: "Github token with permission to fetch PR status and commit the changes"
+    required: true
+  dry-run:
+    description: "If true, skip git push"
+    default: "false"
+    required: false
+
+outputs:
+  bumped:
+    description: "True if version was bumped"
+    value: ${{ steps.bump.outputs.bumped }}
+  new-version:
+    description: "The new version"
+    value: ${{ steps.bump.outputs.new-version }}
+
+runs:
+  using: composite
+  steps:
+    - uses: amannn/action-semantic-pull-request@v6
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20 # use stable LTS; previous 24 caused manifest warning
+        check-latest: true
+
+    - name: Install pnpm and yarn
+      shell: bash
+      run: npm install -g pnpm yarn
+
+    - name: Bump up npm pr version
+      id: bump
+      uses: ../../core
+      with:
+        build-type: "npm"
+        package-json-file: ${{ inputs.package-json-file }}
+        git-username: ${{ inputs.git-username }}
+        git-useremail: ${{ inputs.git-useremail }}
+        commit-message: ${{ inputs.commit-message }}
+        token: ${{ inputs.token }}
+        bump-command: ${{ inputs.bump-command }}
+        post-command: ${{ inputs.post-command }}
+        dry-run: ${{ inputs.dry-run }}

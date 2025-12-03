@@ -1,0 +1,5 @@
+/.github/actions/core/node_modules/
+/.github/actions/core/build/
+/.github/actions/core/coverage/
+.idea/*
+.vscode/*

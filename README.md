@@ -1,28 +1,90 @@
-# SAP Repository Template
-
-Default templates for SAP open source repositories, including LICENSE, .reuse/dep5, Code of Conduct, etc... All repositories on github.com/SAP will be created based on this template.
-
-## To-Do
-
-In case you are the maintainer of a new SAP open source project, these are the steps to do with the template files:
-
-- Check if the default license (Apache 2.0) also applies to your project. A license change should only be required in exceptional cases. If this is the case, please change the [license file](LICENSE).
-- Enter the correct metadata for the REUSE tool. See our [wiki page](https://wiki.one.int.sap/wiki/display/ospodocs/Using+the+Reuse+Tool+of+FSFE+for+Copyright+and+License+Information) for details how to do it. You can find an initial .reuse/dep5 file to build on. Please replace the parts inside the single angle quotation marks < > by the specific information for your repository and be sure to run the REUSE tool to validate that the metadata is correct.
-- Adjust the contribution guidelines (e.g. add coding style guidelines, pull request checklists, different license if needed etc.)
-- Add information about your project to this README (name, description, requirements etc). Especially take care for the <your-project> placeholders - those ones need to be replaced with your project name. See the sections below the horizontal line and [our guidelines on our wiki page](https://wiki.one.int.sap/wiki/pages/viewpage.action?pageId=3564976048#GuidelinesforGitHubHealthfiles(Readme,Contributing,CodeofConduct)-Readme.md) what is required and recommended.
-- Remove all content in this README above and including the horizontal line ;)
-
-***
-
-# Our new open source project
+# Pull Request Semver Bumper
 
 ## About this project
 
-*Insert a short description of your project here...*
+This repository contains a suite of **Composite GitHub Actions** designed to automate semantic version bumping for various project types (Python, Maven, NPM, etc.) within Pull Requests.
 
-## Requirements and Setup
+## GitHub Marketplace Usage
 
-*Insert a short description what is required to get your project running...*
+You can use this action directly from the GitHub Marketplace. It supports multiple project types via the `type` input.
+
+```yaml
+uses: SAP/pull-request-semver-bumper@main
+with:
+  type: 'npm' # Options: npm, maven, python, version-file
+  token: ${{ secrets.GITHUB_TOKEN }}
+  # Optional: Custom file paths
+  package-json-file: 'custom/package.json' # For npm
+  pom-file: 'custom/pom.xml'               # For maven
+  pyproject-file: 'custom/pyproject.toml'  # For python
+  version-file: 'custom/VERSION'           # For version-file
+```
+
+### Inputs
+
+| Input | Description | Default | Required |
+| :--- | :--- | :--- | :--- |
+| `type` | **Required**. Project type to bump (`maven`, `npm`, `python`, `version-file`). | | Yes |
+| `token` | **Required**. GitHub token. | | Yes |
+| `dry-run` | If true, skip git push. | `false` | No |
+| `bump-command` | Custom command to update version. | (auto) | No |
+| `commit-message` | Custom commit message. | `version bump to` | No |
+| `package-json-file` | Path to package.json (npm only). | `package.json` | No |
+| `pom-file` | Path to pom.xml (maven only). | `pom.xml` | No |
+| `pyproject-file` | Path to pyproject.toml (python only). | `pyproject.toml` | No |
+| `version-file` | Path to version file (version-file only). | `VERSION` | No |
+
+
+
+## Contributing
+
+### Forked Repositories
+If you are contributing from a forked repository, you **must** run `npm run build` in `.github/actions/core` and commit the changes to the `dist/` folder before pushing.
+The CI workflow cannot automatically push changes to your fork due to GitHub security restrictions.
+
+We have included a `pre-commit` hook (using `husky`) that will automatically build and add the `dist` folder when you commit changes in `.github/actions/core`.
+The hook is located in the project root (`.husky/`) and is automatically configured when you run `npm install` in `.github/actions/core`.
+
+### Local Development
+1.  Install dependencies: `cd .github/actions/core && npm install`
+    *   This will also set up the git hooks in the project root.
+2.  Make changes.
+3.  The pre-commit hook will handle the build.
+
+## Core Concepts
+
+### 1. Semantic Versioning via PR Titles
+All actions in this suite rely on [Conventional Commits](https://www.conventionalcommits.org/) to determine the version bump level. The Pull Request title is analyzed to decide whether to perform a major, minor, or patch bump.
+
+| PR Title Example | Bump Type | Result Example |
+| :--- | :--- | :--- |
+| `feat: add new login flow` | **Minor** | `1.2.0` -> `1.3.0` |
+| `fix: handle null pointer` | **Patch** | `1.2.0` -> `1.2.1` |
+| `refactor!: drop legacy api` | **Major** | `1.2.0` -> `2.0.0` |
+| `chore: update deps` | **Patch** | `1.2.0` -> `1.2.1` |
+
+> **⚠️ Important:** If the PR title does not follow the Conventional Commits specification, the action will fail, and no version bump will occur.
+
+### 2. Architecture
+These actions are **Composite Actions** that delegate the heavy lifting to a shared core action (`.github/actions/core`).
+- **Validation:** Checks PR title semantics.
+- **Version Extraction:** Reads the current version from the project file (e.g., `pom.xml`, `package.json`).
+- **Calculation:** Computes the next version based on the PR title.
+- **Execution:** Runs the ecosystem-specific bump command.
+- **Commit & Push:** Commits the change back to the PR branch.
+
+## Supported Ecosystems
+
+Select the action that matches your project type for specific configuration and usage instructions:
+
+| Ecosystem | Action Path | Description |
+| :--- | :--- | :--- |
+| **[Python](.github/actions/version-bumping/python/README.md)** | `./.github/actions/version-bumping/python` | Supports `pyproject.toml` (Poetry). |
+| **[Maven](.github/actions/version-bumping/maven/README.md)** | `./.github/actions/version-bumping/maven` | Supports `pom.xml` via `versions-maven-plugin`. |
+| **[NPM](.github/actions/version-bumping/npm/README.md)** | `./.github/actions/version-bumping/npm` | Supports `package.json` via `npm version`. |
+| **[Generic Version File](.github/actions/version-bumping/version-file/README.md)** | `./.github/actions/version-bumping/version-file` | Supports generic `VERSION` files. |
+
+For detailed documentation on specific ecosystem behaviors, click the links above.
 
 ## Support, Feedback, Contributing
 

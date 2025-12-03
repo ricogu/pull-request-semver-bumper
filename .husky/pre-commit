@@ -1,0 +1,2 @@
+npm run build --prefix .github/actions/core
+git add .github/actions/core/dist

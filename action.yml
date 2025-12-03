@@ -1,0 +1,126 @@
+name: "Version Bumping Action"
+description: "Automated semantic version bumping for Maven, NPM, Python, and generic projects."
+branding:
+  icon: "git-merge"
+  color: "blue"
+
+inputs:
+  type:
+    description: "Project type to bump (maven, npm, python, version-file)"
+    required: true
+  token:
+    description: "GitHub token with permission to fetch PR status and commit changes"
+    required: true
+  dry-run:
+    description: "If true, skip git push"
+    default: "false"
+    required: false
+  bump-command:
+    description: "Custom command to update the version"
+    required: false
+  commit-message:
+    description: "Custom commit message for version bump commit"
+    default: "version bump to"
+    required: false
+  git-username:
+    description: "Git username for the commit"
+    default: "github-actions[bot]"
+    required: false
+  git-useremail:
+    description: "Git user email for the commit"
+    default: "github-actions[bot]@users.noreply.github.com"
+    required: false
+  post-command:
+    description: "Shell command to run after version bump"
+    default: ""
+    required: false
+
+  # Specific Inputs
+  package-json-file:
+    description: "Path to package.json (npm only)"
+    default: "package.json"
+    required: false
+  pyproject-file:
+    description: "Path to pyproject.toml (python only)"
+    default: "pyproject.toml"
+    required: false
+  pom-file:
+    description: "Path to pom.xml (maven only)"
+    default: "pom.xml"
+    required: false
+  version-property-path:
+    description: "JSON path to version property (maven only)"
+    default: '["project","version"]'
+    required: false
+  version-file:
+    description: "Path to version file (version-file only)"
+    default: "VERSION"
+    required: false
+
+outputs:
+  bumped:
+    description: "True if version was bumped"
+    value: ${{ steps.bump_maven.outputs.bumped || steps.bump_npm.outputs.bumped || steps.bump_python.outputs.bumped || steps.bump_version_file.outputs.bumped }}
+  new-version:
+    description: "The new version"
+    value: ${{ steps.bump_maven.outputs.new-version || steps.bump_npm.outputs.new-version || steps.bump_python.outputs.new-version || steps.bump_version_file.outputs.new-version }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Bump Maven
+      if: inputs.type == 'maven'
+      id: bump_maven
+      uses: ./.github/actions/version-bumping/maven
+      with:
+        token: ${{ inputs.token }}
+        dry-run: ${{ inputs.dry-run }}
+        bump-command: ${{ inputs.bump-command || 'mvn org.codehaus.mojo:versions-maven-plugin:set -DnewVersion=@NEW_VERSION@ -s settings.xml' }}
+        commit-message: ${{ inputs.commit-message }}
+        git-username: ${{ inputs.git-username }}
+        git-useremail: ${{ inputs.git-useremail }}
+        post-command: ${{ inputs.post-command }}
+        pom-file: ${{ inputs.pom-file }}
+        version-property-path: ${{ inputs.version-property-path }}
+
+    - name: Bump NPM
+      if: inputs.type == 'npm'
+      id: bump_npm
+      uses: ./.github/actions/version-bumping/npm
+      with:
+        token: ${{ inputs.token }}
+        dry-run: ${{ inputs.dry-run }}
+        bump-command: ${{ inputs.bump-command || 'npm version @NEW_VERSION@ --no-git-tag-version --allow-same-version' }}
+        commit-message: ${{ inputs.commit-message }}
+        git-username: ${{ inputs.git-username }}
+        git-useremail: ${{ inputs.git-useremail }}
+        post-command: ${{ inputs.post-command }}
+        package-json-file: ${{ inputs.package-json-file }}
+
+    - name: Bump Python
+      if: inputs.type == 'python'
+      id: bump_python
+      uses: ./.github/actions/version-bumping/python
+      with:
+        token: ${{ inputs.token }}
+        dry-run: ${{ inputs.dry-run }}
+        bump-command: ${{ inputs.bump-command || 'poetry version @NEW_VERSION@' }}
+        commit-message: ${{ inputs.commit-message }}
+        git-username: ${{ inputs.git-username }}
+        git-useremail: ${{ inputs.git-useremail }}
+        post-command: ${{ inputs.post-command }}
+        pyproject-file: ${{ inputs.pyproject-file }}
+
+    - name: Bump Version File
+      if: inputs.type == 'version-file'
+      id: bump_version_file
+      uses: ./.github/actions/version-bumping/version-file
+      with:
+        token: ${{ inputs.token }}
+        dry-run: ${{ inputs.dry-run }}
+        bump-command: ${{ inputs.bump-command || 'echo @NEW_VERSION@ > VERSION' }}
+        commit-message: ${{ inputs.commit-message }}
+        git-username: ${{ inputs.git-username }}
+        git-useremail: ${{ inputs.git-useremail }}
+        post-command: ${{ inputs.post-command }}
+        version-file: ${{ inputs.version-file }}

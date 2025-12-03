@@ -1,0 +1,64 @@
+name: Automated Generic Version Bump
+description: Automated version bump, only recommend to run in PRs.
+
+inputs:
+  build-type:
+    description: "Build type, currently maven and npm are supported"
+    default: "maven"
+    required: false
+  pom-file:
+    description: "Where to find the pom file, only relevant for buildType maven"
+    default: "pom.xml"
+    required: false
+  package-json-file:
+    description: "Where to find the package.json file, only relevant for buildType npm"
+    default: "package.json"
+    required: false
+  version-file:
+    description: "Where to find the version file of golang project, only relevant for buildType golang"
+    default: "VERSION"
+    required: false
+  pyproject-file:
+    description: "pyproject toml file, only relevant for buildType python"
+    default: "pyproject.toml"
+    required: false
+  bump-command:
+    description: "Command to update the version"
+    default: ""
+    required: true
+  git-username:
+    description: "Git username for the commit"
+    default: ""
+    required: true
+  git-useremail:
+    description: "Git user email for the commit"
+    default: ""
+    required: true
+  commit-message:
+    description: "Custom commit message for version bump commit"
+    default: "version bump to"
+    required: false
+  version-property-path:
+    description: "Custom path of version property to update version. Only relevant for buildType maven "
+    default: '["project","version"]'
+    required: false
+  post-command:
+    description: "shell command to run after version bump"
+    default: ""
+    required: false
+  token:
+    description: "Github token"
+    required: true
+  dry-run:
+    description: "If true, skip git push"
+    default: "false"
+    required: false
+outputs:
+  bumped:
+    description: "True if version was bumped"
+  new-version:
+    description: "The new version"
+
+runs:
+  using: node20
+  main: dist/index.js
