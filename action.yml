@@ -71,8 +71,9 @@ runs:
     - name: Copy Actions to Workspace
       shell: bash
       # FIXME: workaround until will be merged: https://github.com/actions/runner/pull/1684
+      # original ref: https://github.com/hoverkraft-tech/ci-github-common/issues/161
       run: |
-        [ -d .github/actions ] || (mkdir -p .github/actions && cp -r $GITHUB_ACTION_PATH/.github/actions .github/actions/)
+        [ -d .github/actions ] || (mkdir -p .github/actions && cp -r $GITHUB_ACTION_PATH/.github/actions/* .github/actions/)
     - name: Bump Maven
       if: inputs.type == 'maven'
       id: bump_maven
