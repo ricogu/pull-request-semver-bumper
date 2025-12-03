@@ -75,8 +75,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Test Python Action (Dry Run)
         id: version_bump
-        uses: ./.github/actions/version-bumping/python
+        uses: ./
         with:
+          type: python
           token: ${{ secrets.GITHUB_TOKEN }}
           pyproject-file: "test-resources/pyproject.toml"
           dry-run: "true"
@@ -101,8 +102,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Test NPM Action (Dry Run)
         id: version_bump
-        uses: ./.github/actions/version-bumping/npm
+        uses: ./
         with:
+          type: npm
           token: ${{ secrets.GITHUB_TOKEN }}
           package-json-file: "test-resources/package.json"
           dry-run: "true"
@@ -127,8 +129,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Test Maven Action (Dry Run)
         id: version_bump
-        uses: ./.github/actions/version-bumping/maven
+        uses: ./
         with:
+          type: maven
           token: ${{ secrets.GITHUB_TOKEN }}
           dry-run: "true"
           pom-file: "test-resources/pom.xml"
@@ -155,8 +158,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Test Version File Action (Dry Run)
         id: version_bump
-        uses: ./.github/actions/version-bumping/version-file
+        uses: ./
         with:
+          type: version-file
           token: ${{ secrets.GITHUB_TOKEN }}
           version-file: "test-resources/VERSION"
           dry-run: "true"
