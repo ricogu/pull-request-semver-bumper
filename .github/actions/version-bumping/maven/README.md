@@ -33,18 +33,8 @@ If you are contributing from a forked repository, please ensure you have built t
 
 ### Private Repositories & Credentials
 The default `bump-command` automatically includes `-s settings.xml` to support private repositories.
-If your `settings.xml` requires authentication, ensure you inject the necessary environment variables (e.g., `GITHUB_TOKEN`, `NEXUS_USERNAME`, `NEXUS_PASSWORD`) into the action step.
+If your `settings.xml` requires authentication, ensure you inject the necessary environment variables (e.g. `NEXUS_USERNAME`, `NEXUS_PASSWORD`) into the action step.
 
-Example with env vars:
-```yaml
-      - name: Bump Maven Version
-        uses: bnac-aas-adapter/version-bumping-action/.github/actions/version-bumping/maven@main
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-        env:
-          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-```
 
 ## Usage Example
 
@@ -69,6 +59,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Bump Maven Version
         uses: sap/pull-request-semver-bumper@main
+        env:
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
         with:
           type: maven
           token: ${{ secrets.GITHUB_TOKEN }}
