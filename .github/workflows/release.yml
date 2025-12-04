@@ -1,0 +1,121 @@
+name: Release
+
+on:
+    workflow_dispatch:
+        inputs:
+            version:
+                description: "Version to release (e.g., 1.0.0)"
+                required: true
+
+permissions:
+    contents: write
+    pull-requests: write
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Validate Version
+              run: |
+                  if [[ ! "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                    echo "::error::Version must be in format X.Y.Z (e.g., 1.0.0)"
+                    exit 1
+                  fi
+                  echo "VERSION=${{ inputs.version }}" >> $GITHUB_ENV
+                  echo "MAJOR_VERSION=$(echo ${{ inputs.version }} | cut -d. -f1)" >> $GITHUB_ENV
+
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Generate Changelog
+              id: changelog
+              uses: mikepenz/release-changelog-builder-action@v5
+              with:
+                  # Using default configuration since configuration.json does not exist
+                  mode: "COMMIT"
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Create Changelog PR
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+
+                  BRANCH_NAME="chore/changelog-v$VERSION"
+                  git checkout -b "$BRANCH_NAME"
+
+                  # Append changelog to CHANGELOG.md (create if not exists)
+                  touch CHANGELOG.md
+                  echo -e "\n## [$VERSION] - $(date +%Y-%m-%d)\n" >> CHANGELOG.md.tmp
+                  echo "${{ steps.changelog.outputs.changelog }}" >> CHANGELOG.md.tmp
+                  cat CHANGELOG.md >> CHANGELOG.md.tmp
+                  mv CHANGELOG.md.tmp CHANGELOG.md
+
+                  git add CHANGELOG.md
+                  git commit -m "chore: update changelog for v$VERSION"
+                  git push origin "$BRANCH_NAME"
+
+                  gh pr create \
+                    --title "chore: update changelog for v$VERSION" \
+                    --body "Automated changelog update for release v$VERSION" \
+                    --base main \
+                    --head "$BRANCH_NAME"
+
+            - name: Create Release Branch
+              run: |
+                  git checkout main
+                  git pull origin main
+                  git checkout -b "release/v$VERSION"
+
+            - name: Update References
+              run: |
+                  # Replace @main with @v{major} in action.yml and sub-actions
+                  # We use a broad sed to catch occurrences in both action.yml and sub-action files
+                  find . -name "action.yml" -print0 | xargs -0 sed -i "s|@main|@v$MAJOR_VERSION|g"
+
+                  # Verify if any changes were made
+                  git diff
+
+            - name: Commit and Push Release Branch
+              run: |
+                  git add .
+                  # Only commit if there are changes
+                  if ! git diff --quiet --cached; then
+                    git commit -m "chore: prepare release v$VERSION"
+                    git push origin "release/v$VERSION"
+                  else
+                    echo "No changes to commit (references might already be correct or using relative paths)."
+                    # We still push the branch to tag it
+                    git push origin "release/v$VERSION"
+                  fi
+
+            - name: Tagging
+              run: |
+                  # Tag specific version
+                  git tag "v$VERSION"
+                  git push origin "v$VERSION"
+
+                  # Tag/Move major version
+                  # Force update the major tag to point to this new release
+                  git tag -f "v$MAJOR_VERSION"
+                  git push -f origin "v$MAJOR_VERSION"
+
+            - name: Create Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: "v${{ inputs.version }}"
+                  name: "v${{ inputs.version }}"
+                  body: ${{ steps.changelog.outputs.changelog }}
+                  prerelease: false
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Cleanup
+              if: always()
+              run: |
+                  # Delete the release branch
+                  git push origin --delete "release/v$VERSION" || true
