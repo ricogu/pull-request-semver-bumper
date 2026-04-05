@@ -4,6 +4,33 @@
 
 This repository contains a suite of **Composite GitHub Actions** designed to automate semantic version bumping for various project types (Python, Maven, NPM, etc.) within Pull Requests.
 
+## Design Rationale & Relationship to SAP Piper
+
+This action is purpose-built to complement [SAP Project Piper](https://www.project-piper.io/) pipelines, not to replace general-purpose release automation tools like `semantic-release` or `release-please`.
+
+### Why not semantic-release or release-please?
+
+Tools like `semantic-release` and `release-please` own the entire release pipeline — changelog generation, GitHub Releases, package publishing. In SAP projects, **Piper owns the release pipeline** and enforces compliance requirements (security scans, audit trails, legal sign-offs) that third-party release tools cannot satisfy.
+
+### Where this action fits
+
+This action solves a specific gap: **automating the base version bump in the PR**, before Piper takes over on merge.
+
+```
+PR opened (feat: add login flow)
+  └─► semver-bumper commits 1.2.0 → 1.3.0 to the PR branch
+        └─► PR reviewed & merged
+              └─► Piper pipeline runs
+                    └─► artifactPrepareVersion reads 1.3.0 from descriptor file
+                          └─► Piper produces final artifact version (e.g. 1.3.0-20260405143022_abc1234)
+```
+
+### Piper versioning and the role of the base version
+
+This action is designed for projects using Piper's **`versioningType: library`**. In this mode, Piper reads the version from the descriptor file (`pom.xml`, `package.json`, etc.) and does **not** overwrite it — the version committed by this action is exactly what gets published.
+
+This makes the semver bump explicit, reviewable, and traceable: the version change lives in the PR diff alongside the code change that motivated it, and Piper picks it up on merge without any additional transformation.
+
 ## Requirements
 
 This project relies on the following software and tools:
@@ -79,7 +106,15 @@ All actions in this suite rely on [Conventional Commits](https://www.conventiona
 
 > **⚠️ Important:** If the PR title does not follow the Conventional Commits specification, the action will fail, and no version bump will occur.
 
-### 2. Architecture
+### 2. Why bump during the PR, not post-merge?
+
+Most versioning tools run after merge to the default branch. This action deliberately bumps **inside the PR branch** so that:
+
+- The version change is **visible and reviewable** as part of the PR diff — no hidden post-merge side effects
+- Piper picks up the correct base version **immediately on merge**, with no intermediate step needed
+- Version history stays linear and traceable alongside the code change that motivated it
+
+### 3. Architecture
 These actions are **Composite Actions** that delegate the heavy lifting to a shared core action (`.github/actions/core`).
 - **Validation:** Checks PR title semantics.
 - **Version Extraction:** Reads the current version from the project file (e.g., `pom.xml`, `package.json`).
