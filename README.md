@@ -27,17 +27,9 @@ PR opened (feat: add login flow)
 
 ### Piper versioning and the role of the base version
 
-Piper's `artifactPrepareVersion` step generates a unique artifact version by appending a timestamp and commit hash to the base version found in the descriptor file (`pom.xml`, `package.json`, etc.):
+This action is designed for projects using Piper's **`versioningType: library`**. In this mode, Piper reads the version from the descriptor file (`pom.xml`, `package.json`, etc.) and does **not** overwrite it — the version committed by this action is exactly what gets published.
 
-| Piper `versioningType` | Behavior | Role of base version |
-| :--- | :--- | :--- |
-| `library` | Piper reads the version and does **not** overwrite it | The bumped version IS the final published version — critical for library consumers |
-| `cloud` | Piper reads the base version and writes back `<base>-<timestamp>_<commitId>` | The bumped version controls the human-readable prefix |
-| `cloud_noTag` | Same as `cloud`, without creating a Git tag | Same as above |
-
-For **reusable libraries** (`versioningType: library`), the version committed by this action is exactly what gets published — making the semver bump both visible and reviewable as part of the PR diff.
-
-For **deployable applications** (`versioningType: cloud`), the base version provides the meaningful `MAJOR.MINOR.PATCH` component while Piper ensures artifact uniqueness.
+This makes the semver bump explicit, reviewable, and traceable: the version change lives in the PR diff alongside the code change that motivated it, and Piper picks it up on merge without any additional transformation.
 
 ## Requirements
 
