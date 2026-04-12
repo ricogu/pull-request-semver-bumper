@@ -1,5 +1,21 @@
 
-## [1.0.0] - 2025-12-04
+## [1.0.1] - 2026-01-07
+
+# Changelog
+
+## 🚀 Features
+
+- feat: Expose bump level as output (#33)
+
+## 🧰 Maintenance
+
+- chore: update changelog for v1.0.0 (#26)
+- chore(deps-dev): bump @types/node from 24.10.1 to 25.0.2 in /.github/actions/core (#29)
+- chore(deps): bump @actions/core from 1.11.1 to 2.0.1 in /.github/actions/core (#28)
+- chore(deps): bump @actions/exec from 1.1.1 to 2.0.0 in /.github/actions/core (#27)
+- chore(deps-dev): bump @types/node from 25.0.2 to 25.0.3 in /.github/actions/core (#32)
+
+## [1.0.0] - 2025-12-08
 
 # Changelog
 
@@ -18,6 +34,7 @@
 - fix: correctly copy action contents to the workspace instead of the directory itself.
 - fix: correctly copy action directory contents to workspace (#12)
 - fix: correctly copy action directory contents to workspace instead of the directory itself.
+- fix: fix calling branch in documentation (#22)
 - fix: remove angle brackets from SPDX fields in REUSE.toml
 - fix: update workflow group (#7)
 - fix: use external invoking for sub-actions (#13)
@@ -47,10 +64,12 @@
 
 ## 📝 Documentation
 
+- docs: add issue templates and reuse api badege (#21)
 - docs: add project name into copyright place holder (#5)
 - docs: add requirements section and update licensing link in README (#10)
 - docs: add requirements section and update licensing link in README.
 - docs: update Maven README (#3)
 - docs: update Maven README to remove outdated credential example and add Nexus env vars to main usage.
+- docs: update readme highlighting USP and update meta information (#23)
 
 

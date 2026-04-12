@@ -19,6 +19,8 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+    outputs:
+      committed_sha: ${{ steps.commit_dist.outputs.commit_sha }}
     steps:
       - name: Checkout PR head
         uses: actions/checkout@v4
@@ -47,6 +49,7 @@ jobs:
 
       - name: Commit build artifacts (same-repo PRs only)
         if: github.event.pull_request.head.repo.full_name == github.repository
+        id: commit_dist
         uses: EndBug/add-and-commit@v9
         with:
           add: "."
@@ -90,6 +93,7 @@ jobs:
         run: |
           echo "Bumped: ${{ steps.version_bump.outputs.bumped }}"
           echo "New Version: ${{ steps.version_bump.outputs.new-version }}"
+          echo "Bump Level: ${{ steps.version_bump.outputs.bumpLevel }}"
           echo "### Python Test New Version: ${{ steps.version_bump.outputs.new-version }}" >> $GITHUB_STEP_SUMMARY
           if [ -z "${{ steps.version_bump.outputs.bumped }}" ]; then
             echo "Error: 'bumped' output is empty"
@@ -121,6 +125,7 @@ jobs:
         run: |
           echo "Bumped: ${{ steps.version_bump.outputs.bumped }}"
           echo "New Version: ${{ steps.version_bump.outputs.new-version }}"
+          echo "Bump Level: ${{ steps.version_bump.outputs.bumpLevel }}"
           echo "### NPM Test New Version: ${{ steps.version_bump.outputs.new-version }}" >> $GITHUB_STEP_SUMMARY
           if [ -z "${{ steps.version_bump.outputs.bumped }}" ]; then
             echo "Error: 'bumped' output is empty"
@@ -154,6 +159,7 @@ jobs:
         run: |
           echo "Bumped: ${{ steps.version_bump.outputs.bumped }}"
           echo "New Version: ${{ steps.version_bump.outputs.new-version }}"
+          echo "Bump Level: ${{ steps.version_bump.outputs.bumpLevel }}"
           echo "### Maven Test New Version: ${{ steps.version_bump.outputs.new-version }}" >> $GITHUB_STEP_SUMMARY
           if [ -z "${{ steps.version_bump.outputs.bumped }}" ]; then
             echo "Error: 'bumped' output is empty"
@@ -185,6 +191,7 @@ jobs:
         run: |
           echo "Bumped: ${{ steps.version_bump.outputs.bumped }}"
           echo "New Version: ${{ steps.version_bump.outputs.new-version }}"
+          echo "Bump Level: ${{ steps.version_bump.outputs.bumpLevel }}"
           echo "### Version File Test New Version: ${{ steps.version_bump.outputs.new-version }}" >> $GITHUB_STEP_SUMMARY
           if [ -z "${{ steps.version_bump.outputs.bumped }}" ]; then
             echo "Error: 'bumped' output is empty"
@@ -212,6 +219,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           status: ${{ steps.status.outputs.status }}
+          sha: ${{ needs.build-dist.outputs.committed_sha || github.event.pull_request.head.sha }}
           context: "all-tests-passed"
           description: "Aggregation of all tests"
 
